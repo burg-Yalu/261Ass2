@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
 
+
 public class HitStone extends GameEngine {
 
     // 游戏状态枚举
@@ -14,6 +15,7 @@ public class HitStone extends GameEngine {
     private GameTimer gameTimer;
     private GameState gameState = GameState.RUNNING;
     private boolean statusWindowVisible = false;
+    private SoundPlayer backgroundMusic;
     private int score = 0;
     // 创建游戏
     public static void main(String[] args) {
@@ -66,8 +68,6 @@ public class HitStone extends GameEngine {
         }
 
         batx += batvx * dt;
-
-        //bat status
         if (batstatus == 0) {
             batWidth = 100;
         } else if (batstatus == 1) {
@@ -75,14 +75,13 @@ public class HitStone extends GameEngine {
         } else if (batstatus == 2) {
             batWidth = 50;
         }
-
     }
+
 
     public void drawBat() {
         saveCurrentTransform();
         translate(batx, baty);
         //drawImage(bat_normal_middle, -batWidth / 2, 0, batWidth, 16);
-
         if (batstatus == 0) {
             drawImage(bat_normal_middle, -batWidth/2, 0, batWidth, 16);
         } else if (batstatus == 1) {
@@ -90,7 +89,6 @@ public class HitStone extends GameEngine {
         } else if (batstatus == 2) {
             drawImage(bat_short_middle, -batWidth/2, 0, batWidth, 16);
         }
-
         restoreLastTransform();
     }
     public void drawTimeScore(double x, double y) {
@@ -148,18 +146,18 @@ public class HitStone extends GameEngine {
                 }
             }
             // 触板反弹
-            if (!batToStopBall && ballX[i] + 8 >= batx - batWidth / 2 && ballX[i] + 8 <= batx + batWidth / 2 && ballY[i] + 16 >= baty) {
+            if (!batToStopBall && ballX[i] + 8 >= batx - batWidth / 2 && ballX[i] + 8 <= batx + batWidth / 2 && ballY[i] + 16 >= baty && ballY[i] + 16 < baty + 16) {
                 distanceX[i] = batx - ballX[i];
                 ballVX[i] = 0;
                 ballVY[i] = 0;
                 ballX[i] = batx - distanceX[i];
                 ballY[i] = baty - 16;
-            } else if (batToStopBall && ballX[i] + 8 >= batx - batWidth / 2 && ballX[i] + 8 <= batx + batWidth / 2 && ballY[i] + 16 >= baty) {
+            } else if (batToStopBall && ballX[i] + 8 >= batx - batWidth / 2 && ballX[i] + 8 <= batx + batWidth / 2 && ballY[i] + 16 >= baty && ballY[i] + 16 < baty + 16) {
                 double l = length(ballX[i] + 8 - batx, 16);
                 ballVX[i] = 240 * (ballX[i] + 8 - batx) / l;
                 ballVY[i] = -240 * (16) / l;
             }
-            if (ballX[i] <= 0 || ballX[i] + 16 >= 700) {
+            if (ballX[i] < 0 || ballX[i] + 16 > 700) {
                 ballVX[i] *= -1;
             }
             if (ballY[i] <= 0) {
@@ -198,7 +196,6 @@ public class HitStone extends GameEngine {
     double[] brickTimer;
     boolean[] brickActive;
     boolean[] brickBreak;
-
 
     public void initBrick(){
 
@@ -272,9 +269,16 @@ public class HitStone extends GameEngine {
                         if((abs(brickX[i]-30-(ballX[j]+8))<8||abs(ballX[j]+8-(brickX[i]+30))<8) && abs(ballY[j]+8-(brickY[i]))<15){
                             brickLife[i] --;
                             ballVX[j] *= -1;
-                        }else if((abs(brickY[i]-15-(ballY[j]+8))<8||abs(ballY[j]+8-(brickY[i]+15))<8) && abs(ballX[j]+8-(brickX[i]))<30){
+                            if (brickLife[i] == 0) {
+                                SoundPlayer.playSound("src/main/resources/break.wav");
+                            }
+                        }
+                        if((abs(brickY[i]-15-(ballY[j]+8))<8||abs(ballY[j]+8-(brickY[i]+15))<8) && abs(ballX[j]+8-(brickX[i]))<30){
                             brickLife[i] --;
                             ballVY[j] *= -1;
+                            if (brickLife[i] == 0) {
+                                SoundPlayer.playSound("src/main/resources/break.wav");
+                            }
                         }
                         if (brickLife[i]==0){
                             brickActive[i] = false;
@@ -334,12 +338,17 @@ public class HitStone extends GameEngine {
         initBat();
         initBall();
         initBrick(); // 添加这行代码以初始化砖块
-        batWidth = 90;
+        //batWidth = 90;
 
         // 初始化计时器
         gameTimer = new GameTimer();
-        gameTimer.start();
+        //gameTimer.start();
         score = 0;
+        backgroundMusic = new SoundPlayer("src/main/resources/background_music.wav");
+        backgroundMusic.play();
+
+
+
     }
 
     // 更新游戏
@@ -361,9 +370,6 @@ public class HitStone extends GameEngine {
         drawBat();
         drawBall();
         drawBrik();
-
-
-
     }
 
     // 按键监听器
@@ -378,19 +384,26 @@ public class HitStone extends GameEngine {
         }
         if (e.getKeyCode() == KeyEvent.VK_SPACE) {
             batToStopBall = true;
+            if (!gameTimer.running) { // 仅在计时器没有运行时启动
+                gameTimer.start();
+            }
         }
         // 用户按下 'P' 键暂停游戏
         if (e.getKeyCode() == KeyEvent.VK_P) {
             if (gameState == GameState.RUNNING) {
                 gameState = GameState.PAUSED;
                 gameTimer.stop(); // 暂停计时器
+                backgroundMusic.pause(); // 暂停背景音乐
                 showGameStatus("Game Paused, click OK to restart");
             }
         }
         // 用户按下 'R' 键重启游戏
         if (e.getKeyCode() == KeyEvent.VK_R) {
+            backgroundMusic.stop(); // 停止当前背景音乐
             init();
             gameState = GameState.RUNNING;
+            gameTimer.start();
+
             showGameStatus("Game Restarted, click OK to continue");
         }
     }
@@ -405,6 +418,7 @@ public class HitStone extends GameEngine {
                     if (gameState == GameState.PAUSED) {
                         gameState = GameState.RUNNING;
                         gameTimer.start(); // 重新启动计时器
+                        backgroundMusic.resume(); // 恢复背景音乐
                     }
                     statusWindowVisible = false; // 将状态设置为窗口已关闭
                 }
@@ -442,7 +456,6 @@ public class HitStone extends GameEngine {
                 running = false;
             }
         }
-
 
         public void reset() {
             startTime = 0;
