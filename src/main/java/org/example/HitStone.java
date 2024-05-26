@@ -443,6 +443,7 @@ public class HitStone extends GameEngine {
             }
         }
 
+
         public void reset() {
             startTime = 0;
             elapsedTime = 0;
