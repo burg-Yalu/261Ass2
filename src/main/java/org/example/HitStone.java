@@ -45,7 +45,7 @@ public class HitStone extends GameEngine {
         baty = 600;
         batvx = 0;
         batvy = 0;
-        batstatus = 0;
+        batstatus = 1;
         batDirection = 0;
         batToStopBall = false;
     }
@@ -69,11 +69,11 @@ public class HitStone extends GameEngine {
 
         batx += batvx * dt;
         if (batstatus == 0) {
-            batWidth = 100;
-        } else if (batstatus == 1) {
-            batWidth = 150;
-        } else if (batstatus == 2) {
             batWidth = 50;
+        } else if (batstatus == 1) {
+            batWidth = 100;
+        } else if (batstatus == 2) {
+            batWidth = 150;
         }
     }
 
@@ -196,6 +196,9 @@ public class HitStone extends GameEngine {
     double[] brickTimer;
     boolean[] brickActive;
     boolean[] brickBreak;
+    double[] buffX;
+    double[] buffY;
+    boolean[] buffActive;
 
     public void initBrick(){
 
@@ -206,15 +209,19 @@ public class HitStone extends GameEngine {
         brickType = new int[100];
         brickLife = new int[100];
         brickBreak = new boolean[100];
+        buffX = new double[100];
+        buffY = new double[100];
+        buffActive = new boolean[100];
 
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
                 brickActive[10*i+j] = true;
-                brickType[10*i+j] = 2;
+                brickType[10*i+j] = 3;
                 brickX[10*i+j] = 60.0 * j + 75;
                 brickY[10*i+j] = 30 * i + 30;
                 brickLife[10*i+j] = 1;
                 brickBreak[10*i+j] = false;
+                buffActive[10*i+j] = false;
             }
         }
 
@@ -233,23 +240,26 @@ public class HitStone extends GameEngine {
             green[i] = subImage(loadImage("src/main/resources/Stones/stone_breaking_green_strip5.png"),65*(i-1),0,60,30);
         }
         //orange
-        orange = new Image[6];
-        orange[0] = subImage(loadImage("src/main/resources/Stones/stone_normal_orange.png"),5,4,54,25);
+        orange = new Image[7];
+        orange[0] = subImage(loadImage("src/main/resources/Stones/orange_plus-removebg-preview.png"),5,4,54,25);
         for (int i = 1; i < 6; i++) {
             orange[i] = subImage(loadImage("src/main/resources/Stones/stone_breaking_orange_strip5.png"),65*(i-1),0,60,30);
         }
+        orange[6] = loadImage("src/main/resources/Plus.png");
         //pink
-        pink = new Image[6];
-        pink[0] = loadImage("src/main/resources/Stones/pink_minus.jpg");
+        pink = new Image[7];
+        pink[0] = subImage(loadImage("src/main/resources/Stones/pink.png"),4,5,55,23);
         for (int i = 1; i < 6; i++) {
             pink[i] = subImage(loadImage("src/main/resources/Stones/stone_breaking_pink_strip5.png"),65*(i-1),0,60,30);
         }
+        pink[6] = loadImage("src/main/resources/minus.png");
         //purple
-        purple = new Image[6];
-        purple[0] = loadImage("src/main/resources/Stones/stone_life_purple.png");
+        purple = new Image[7];
+        purple[0] = subImage(loadImage("src/main/resources/Stones/stone_life_purple.png"),5,4,54,25);
         for (int i = 1; i < 6; i++) {
             purple[i] = subImage(loadImage("src/main/resources/Stones/stone_breaking_purple_strip5.png"),65*(i-1),0,60,30);
         }
+        purple[6] = loadImage("src/main/resources/heart.png");
     }
     public void updateBrick(double dt){
         for (int i = 0; i < 100; i++) {
@@ -282,6 +292,8 @@ public class HitStone extends GameEngine {
                         }
                         if (brickLife[i]==0){
                             brickActive[i] = false;
+                            buffActive[i] = true;
+                            createBuff(i);
                             brickTimer[i] = 0;
                         }else if (brickLife[i]<0){
                             brickActive[i] = false;
@@ -312,6 +324,10 @@ public class HitStone extends GameEngine {
                 translate(brickX[i], brickY[i]);
                 if (brickType[i] == 2) {
                     drawImage(orange[0], -30, -15, 60, 30);
+                }else if (brickType[i] == 3) {
+                    drawImage(pink[0], -30, -15, 60, 30);
+                }else if (brickType[i] == 4) {
+                    drawImage(purple[0], -30, -15, 60, 30);
                 }
                 restoreLastTransform();
             }else if (brickLife[i] == 0){
@@ -324,6 +340,47 @@ public class HitStone extends GameEngine {
                     drawImage(green[j],-30, -15, 60, 30);
                 }else if(brickType[i]==2){
                     drawImage(orange[j],-30, -15, 60, 30);
+                }else if(brickType[i]==3){
+                    drawImage(pink[j],-30, -15, 60, 30);
+                }
+                restoreLastTransform();
+            }
+        }
+    }
+    public void createBuff(int i){
+        if (brickType[i] != 0 && brickType[i] != 1){
+            buffX[i] = brickX[i];
+            buffY[i] = brickY[i];
+            buffActive[i] = true;
+        } else return;
+    }
+    public void updateBuff(double dt){
+        for (int i = 0; i < 100; i++) {
+            if (buffActive[i]){
+                buffY[i] += 240 * dt;
+                if (abs(buffX[i]-batx)<(width()/2 + 16) && abs(buffY[i]-baty)<24){
+                    if (brickType[i] == 2 && batstatus<2){
+                        batstatus++;
+                    }else if (brickType[i] == 3 && batstatus>0){
+                        batstatus--;
+                    }
+                    buffActive[i] = false;
+                }
+            }
+
+        }
+    }
+    public void drawBuff(){
+        for (int i = 0; i < 100; i++) {
+            if (buffActive[i]){
+                saveCurrentTransform();
+                translate(buffX[i],buffY[i]);
+                if (brickType[i] == 2){
+                    drawImage(orange[6],-16,-16,32,32);
+                }else if (brickType[i] == 3){
+                    drawImage(pink[6],-16,-16,32,32);
+                }else if (brickType[i] == 4){
+                    drawImage(purple[6],-16,-16,32,32);
                 }
                 restoreLastTransform();
             }
@@ -358,6 +415,7 @@ public class HitStone extends GameEngine {
             updateBat(dt);
             updateBall(dt);
             updateBrick(dt);
+            updateBuff(dt);
         }
     }
 
@@ -370,6 +428,7 @@ public class HitStone extends GameEngine {
         drawBat();
         drawBall();
         drawBrik();
+        drawBuff();
     }
 
     // 按键监听器
