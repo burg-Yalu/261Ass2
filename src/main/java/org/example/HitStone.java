@@ -2,6 +2,7 @@ package org.example;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.Random;
 import javax.swing.*;
 
 
@@ -83,11 +84,11 @@ public class HitStone extends GameEngine {
         translate(batx, baty);
         //drawImage(bat_normal_middle, -batWidth / 2, 0, batWidth, 16);
         if (batstatus == 0) {
-            drawImage(bat_normal_middle, -batWidth/2, 0, batWidth, 16);
-        } else if (batstatus == 1) {
-            drawImage(bat_long_middle, -batWidth/2, 0, batWidth, 16);
-        } else if (batstatus == 2) {
             drawImage(bat_short_middle, -batWidth/2, 0, batWidth, 16);
+        } else if (batstatus == 1) {
+            drawImage(bat_normal_middle, -batWidth/2, 0, batWidth, 16);
+        } else if (batstatus == 2) {
+            drawImage(bat_long_middle, -batWidth/2, 0, batWidth, 16);
         }
         restoreLastTransform();
     }
@@ -199,6 +200,7 @@ public class HitStone extends GameEngine {
     double[] buffX;
     double[] buffY;
     boolean[] buffActive;
+    int[] bluecount;
 
     public void initBrick(){
 
@@ -212,30 +214,38 @@ public class HitStone extends GameEngine {
         buffX = new double[100];
         buffY = new double[100];
         buffActive = new boolean[100];
+        bluecount = new int[100];
 
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                brickActive[10*i+j] = true;
-                brickType[10*i+j] = 3;
-                brickX[10*i+j] = 60.0 * j + 75;
-                brickY[10*i+j] = 30 * i + 30;
-                brickLife[10*i+j] = 1;
-                brickBreak[10*i+j] = false;
-                buffActive[10*i+j] = false;
+                Random random = new Random();
+                double randomNumber = random.nextDouble();
+                if(randomNumber  < 0.8){
+                    int randType = rand(5);
+                    brickActive[10*i+j] = true;
+                    brickType[10*i+j] = randType;
+                    brickX[10*i+j] = 60.0 * j + 75;
+                    brickY[10*i+j] = 30 * i + 30;
+                    brickLife[10*i+j] = 1;
+                    if (randType == 0){brickLife[i] = 2;}
+                    brickBreak[10*i+j] = false;
+                    bluecount[i]=2;
+                }
+
             }
         }
 
 
         //bule can be defeated by twice hits
         bule1 = new Image[7];
-        bule1[0] = loadImage("src/main/resources/Stones/stone_normal_blue.png");
+        bule1[0] = subImage(loadImage("src/main/resources/Stones/stone_normal_blue.png"),5,4,54,25);
         bule1[1] = loadImage("src/main/resources/Stones/stone_damaged2_blue.png");
         for (int i = 2; i < 7; i++) {
             bule1[i] = subImage(loadImage("src/main/resources/Stones/stone_breaking_blue_strip5.png"),65*(i-2),0,60,30);
         }
         // green can explosion
         green = new Image[6];
-        green[0] = loadImage("src/main/resources/Stones/stone_normal_blue.png");
+        green[0] = subImage(loadImage("src/main/resources/Stones/stone_normal_green.png"),5,4,54,25);
         for (int i = 1; i < 6; i++) {
             green[i] = subImage(loadImage("src/main/resources/Stones/stone_breaking_green_strip5.png"),65*(i-1),0,60,30);
         }
@@ -279,6 +289,9 @@ public class HitStone extends GameEngine {
                         if((abs(brickX[i]-30-(ballX[j]+8))<8||abs(ballX[j]+8-(brickX[i]+30))<8) && abs(ballY[j]+8-(brickY[i]))<15){
                             brickLife[i] --;
                             ballVX[j] *= -1;
+                            if(brickType[i]==0){
+                                bluecount[i] -= 1;
+                            }
                             if (brickLife[i] == 0) {
                                 SoundPlayer.playSound("src/main/resources/break.wav");
                             }
@@ -286,6 +299,9 @@ public class HitStone extends GameEngine {
                         if((abs(brickY[i]-15-(ballY[j]+8))<8||abs(ballY[j]+8-(brickY[i]+15))<8) && abs(ballX[j]+8-(brickX[i]))<30){
                             brickLife[i] --;
                             ballVY[j] *= -1;
+                            if(brickType[i]==0){
+                                bluecount[i] -= 1;
+                            }
                             if (brickLife[i] == 0) {
                                 SoundPlayer.playSound("src/main/resources/break.wav");
                             }
@@ -322,7 +338,11 @@ public class HitStone extends GameEngine {
             if (brickActive[i]) {
                 saveCurrentTransform();
                 translate(brickX[i], brickY[i]);
-                if (brickType[i] == 2) {
+                if (brickType[i] == 0) {
+                    drawImage(bule1[0], -30, -15, 60, 30);
+                }else if (brickType[i] == 1) {
+                    drawImage(green[0], -30, -15, 60, 30);
+                }else if (brickType[i] == 2) {
                     drawImage(orange[0], -30, -15, 60, 30);
                 }else if (brickType[i] == 3) {
                     drawImage(pink[0], -30, -15, 60, 30);
@@ -344,6 +364,10 @@ public class HitStone extends GameEngine {
                     drawImage(pink[j],-30, -15, 60, 30);
                 }
                 restoreLastTransform();
+            }else if (bluecount[i]==1){
+                saveCurrentTransform();
+                drawImage(bule1[0], -30, -15, 60, 30);
+                restoreLastTransform();
             }
         }
     }
@@ -358,7 +382,8 @@ public class HitStone extends GameEngine {
         for (int i = 0; i < 100; i++) {
             if (buffActive[i]){
                 buffY[i] += 240 * dt;
-                if (abs(buffX[i]-batx)<(width()/2 + 16) && abs(buffY[i]-baty)<24){
+                if (abs(buffX[i]-batx)<(batWidth/2 + 16) && abs(buffY[i]-baty)<16){
+
                     if (brickType[i] == 2 && batstatus<2){
                         batstatus++;
                     }else if (brickType[i] == 3 && batstatus>0){
@@ -403,9 +428,6 @@ public class HitStone extends GameEngine {
         score = 0;
         backgroundMusic = new SoundPlayer("src/main/resources/background_music.wav");
         backgroundMusic.play();
-
-
-
     }
 
     // 更新游戏
