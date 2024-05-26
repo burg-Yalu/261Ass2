@@ -23,6 +23,8 @@ public class HitStone extends GameEngine {
     // 声明
     Image BackgroundImage = loadImage("src/main/resources/background.png");
     Image bat_normal_middle = loadImage("src/main/resources/bat_large.png");
+    Image bat_long_middle = loadImage("src/main/resources/bat_huge.png");
+    Image bat_short_middle = loadImage("src/main/resources/bat_small.png");
     boolean gameover;
 
     // Bat
@@ -64,12 +66,31 @@ public class HitStone extends GameEngine {
         }
 
         batx += batvx * dt;
+
+        //bat status
+        if (batstatus == 0) {
+            batWidth = 100;
+        } else if (batstatus == 1) {
+            batWidth = 150;
+        } else if (batstatus == 2) {
+            batWidth = 50;
+        }
+
     }
 
     public void drawBat() {
         saveCurrentTransform();
         translate(batx, baty);
-        drawImage(bat_normal_middle, -batWidth / 2, 0, batWidth, 16);
+        //drawImage(bat_normal_middle, -batWidth / 2, 0, batWidth, 16);
+
+        if (batstatus == 0) {
+            drawImage(bat_normal_middle, -batWidth/2, 0, batWidth, 16);
+        } else if (batstatus == 1) {
+            drawImage(bat_long_middle, -batWidth/2, 0, batWidth, 16);
+        } else if (batstatus == 2) {
+            drawImage(bat_short_middle, -batWidth/2, 0, batWidth, 16);
+        }
+
         restoreLastTransform();
     }
     public void drawTimeScore(double x, double y) {
@@ -176,6 +197,7 @@ public class HitStone extends GameEngine {
     int[] brickLife;
     double[] brickTimer;
     boolean[] brickActive;
+    boolean[] brickBreak;
 
 
     public void initBrick(){
@@ -186,6 +208,7 @@ public class HitStone extends GameEngine {
         brickActive = new boolean[100];
         brickType = new int[100];
         brickLife = new int[100];
+        brickBreak = new boolean[100];
 
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
@@ -194,6 +217,7 @@ public class HitStone extends GameEngine {
                 brickX[10*i+j] = 60.0 * j + 75;
                 brickY[10*i+j] = 30 * i + 30;
                 brickLife[10*i+j] = 1;
+                brickBreak[10*i+j] = false;
             }
         }
 
@@ -248,14 +272,15 @@ public class HitStone extends GameEngine {
                         if((abs(brickX[i]-30-(ballX[j]+8))<8||abs(ballX[j]+8-(brickX[i]+30))<8) && abs(ballY[j]+8-(brickY[i]))<15){
                             brickLife[i] --;
                             ballVX[j] *= -1;
-                        }
-                        if((abs(brickY[i]-15-(ballY[j]+8))<8||abs(ballY[j]+8-(brickY[i]+15))<8) && abs(ballX[j]+8-(brickX[i]))<30){
+                        }else if((abs(brickY[i]-15-(ballY[j]+8))<8||abs(ballY[j]+8-(brickY[i]+15))<8) && abs(ballX[j]+8-(brickX[i]))<30){
                             brickLife[i] --;
                             ballVY[j] *= -1;
                         }
                         if (brickLife[i]==0){
                             brickActive[i] = false;
                             brickTimer[i] = 0;
+                        }else if (brickLife[i]<0){
+                            brickActive[i] = false;
                         }
                     }
                 }
