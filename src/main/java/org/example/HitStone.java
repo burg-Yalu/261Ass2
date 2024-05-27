@@ -307,6 +307,7 @@ public class HitStone extends GameEngine {
                             }
                         }
                         if (brickLife[i]==0){
+                            score += 10;
                             brickActive[i] = false;
                             buffActive[i] = true;
                             createBuff(i);
@@ -386,10 +387,12 @@ public class HitStone extends GameEngine {
 
                     if (brickType[i] == 2 && batstatus<2){
                         batstatus++;
+                        score += 10;
                     }else if (brickType[i] == 3 && batstatus>0){
                         batstatus--;
+                        score -= 10;
                     }
-                    buffActive[i] = false;
+
                 }
             }
 
