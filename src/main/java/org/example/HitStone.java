@@ -19,6 +19,7 @@ public class HitStone extends GameEngine {
     private SoundPlayer backgroundMusic;
     private int score = 0;
     private int lives;
+    private int level = 1;
 
 
     // 创建游戏
@@ -303,6 +304,33 @@ public class HitStone extends GameEngine {
         }
         purple[6] = loadImage("src/main/resources/heart.png");
     }
+    public void initBrickLevel2(){
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                if(!(i==0 || i== 8|| i==9)){
+                    if(j==3||j==4||j==5){
+                        brickActive[10*i+j] = false;
+                        continue;
+                    }
+                }
+
+                Random random = new Random();
+                double randomNumber = random.nextDouble();
+                if(randomNumber  < 0.8){
+                    int randType = rand(5);
+                    brickActive[10*i+j] = true;
+                    brickType[10*i+j] = randType;
+                    brickX[10*i+j] = 60.0 * j + 75;
+                    brickY[10*i+j] = 30 * i + 30;
+                    brickLife[10*i+j] = 1;
+                    if (randType == 0){brickLife[i] = 2;}
+                    brickBreak[10*i+j] = false;
+                    bluecount[i]=2;
+                }
+
+            }
+        }
+    }
     public void updateBrick(double dt){
         for (int i = 0; i < 100; i++) {
             if (brickActive[i]) {
@@ -350,7 +378,7 @@ public class HitStone extends GameEngine {
                 }
             }else brickTimer[i] += dt;
             if (brickTimer[i]>0.5 && brickLife[i]==0){
-                brickLife[i]--;
+                brickLife[i] = -2;
             }
         }
     }
@@ -471,6 +499,10 @@ public class HitStone extends GameEngine {
             updateBall(dt);
             updateBrick(dt);
             updateBuff(dt);
+            if (level == 2){
+                level++;
+                initBrickLevel2();
+            }
         }
     }
 
@@ -519,6 +551,9 @@ public class HitStone extends GameEngine {
             gameTimer.start();
 
             showGameStatus("Game Restarted, click OK to continue");
+        }
+        if(e.getKeyCode() == KeyEvent.VK_5){
+            level = 2;
         }
     }
 
