@@ -234,6 +234,9 @@ public class HitStone extends GameEngine {
     double[] buffY;
     boolean[] buffActive;
     int[] bluecount;
+    boolean empty1 = false;
+    int brickCount;
+    int brick;
 
     public void initBrick(){
 
@@ -248,12 +251,15 @@ public class HitStone extends GameEngine {
         buffY = new double[100];
         buffActive = new boolean[100];
         bluecount = new int[100];
+        brickCount = 0;
+        brick = 0;
 
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
                 Random random = new Random();
                 double randomNumber = random.nextDouble();
                 if(randomNumber  < 0.8){
+                    brickCount++;
                     int randType = rand(5);
                     brickActive[10*i+j] = true;
                     brickType[10*i+j] = randType;
@@ -366,6 +372,7 @@ public class HitStone extends GameEngine {
                             }
                         }
                         if (brickLife[i]==0){
+                            brick++;
                             score += 10;
                             brickActive[i] = false;
                             buffActive[i] = true;
@@ -379,6 +386,9 @@ public class HitStone extends GameEngine {
             }else brickTimer[i] += dt;
             if (brickTimer[i]>0.5 && brickLife[i]==0){
                 brickLife[i] = -2;
+            }
+            if (brickActive[i]){
+                empty1 = true;
             }
         }
     }
@@ -499,10 +509,14 @@ public class HitStone extends GameEngine {
             updateBall(dt);
             updateBrick(dt);
             updateBuff(dt);
+            if (brickCount == brick){
+                level = 2;
+            }
             if (level == 2){
                 level++;
                 initBrickLevel2();
             }
+
         }
     }
 
