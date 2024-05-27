@@ -18,6 +18,9 @@ public class HitStone extends GameEngine {
     private boolean statusWindowVisible = false;
     private SoundPlayer backgroundMusic;
     private int score = 0;
+    private int lives;
+
+
     // 创建游戏
     public static void main(String[] args) {
         createGame(new HitStone());
@@ -28,6 +31,7 @@ public class HitStone extends GameEngine {
     Image bat_normal_middle = loadImage("src/main/resources/bat_large.png");
     Image bat_long_middle = loadImage("src/main/resources/bat_huge.png");
     Image bat_short_middle = loadImage("src/main/resources/bat_small.png");
+    Image heartImage = loadImage("src/main/resources/heart.png");
     boolean gameover;
 
     // Bat
@@ -98,6 +102,12 @@ public class HitStone extends GameEngine {
         mGraphics.drawString("Time: " + gameTimer.getFormattedTime(),  (int)x, (int)y);
         int nextY = (int)y + mGraphics.getFontMetrics().getHeight();
         mGraphics.drawString("Score: " + score,  (int)x, nextY);
+        int hpX = 600; // 生命值显示的位置
+        int hpY = 20;
+        mGraphics.drawString("HP: ", hpX, hpY);
+        for (int i = 0; i < lives; i++) {
+            drawImage(heartImage, hpX + 30 + (i * 20), hpY - 15, 16, 16); // 绘制心形图标
+        }
     }
     // Ball
     Image[] ball;
@@ -145,6 +155,28 @@ public class HitStone extends GameEngine {
                     ballX[i] = batx - distanceX[i];
                     ballY[i] = baty - 16;
                 }
+                if (!batToStopBall){
+                    ballX[i] = batx - distanceX[i];
+                    ballY[i] = baty - 16;
+                }
+                if (ballY[i] >= 700) {
+                    lives--; // 生命值减少
+                    batToStopBall = false;
+                    if (lives <= 0) {
+                        showGameStatus("Game Lose");
+                        backgroundMusic.stop();
+                        gameover = true; // 设置游戏结束标志
+                    }
+//                    if (lives <= 0) {
+//                        backgroundMusic.stop(); // 停止当前背景音乐
+//                        //init();
+//                        gameState = GameState.RUNNING;
+//                        gameTimer.start();
+//
+//                        showGameStatus("Game Over, click OK to continue");
+//                    }
+                }
+
             }
             // 触板反弹
             if (!batToStopBall && ballX[i] + 8 >= batx - batWidth / 2 && ballX[i] + 8 <= batx + batWidth / 2 && ballY[i] + 16 >= baty && ballY[i] + 16 < baty + 16) {
@@ -295,8 +327,7 @@ public class HitStone extends GameEngine {
                             if (brickLife[i] == 0) {
                                 SoundPlayer.playSound("src/main/resources/break.wav");
                             }
-                        }
-                        if((abs(brickY[i]-15-(ballY[j]+8))<8||abs(ballY[j]+8-(brickY[i]+15))<8) && abs(ballX[j]+8-(brickX[i]))<30){
+                        }else if((abs(brickY[i]-15-(ballY[j]+8))<8||abs(ballY[j]+8-(brickY[i]+15))<8) && abs(ballX[j]+8-(brickX[i]))<30){
                             brickLife[i] --;
                             ballVY[j] *= -1;
                             if(brickType[i]==0){
@@ -365,10 +396,6 @@ public class HitStone extends GameEngine {
                     drawImage(pink[j],-30, -15, 60, 30);
                 }
                 restoreLastTransform();
-            }else if (bluecount[i]==1){
-                saveCurrentTransform();
-                drawImage(bule1[0], -30, -15, 60, 30);
-                restoreLastTransform();
             }
         }
     }
@@ -391,8 +418,10 @@ public class HitStone extends GameEngine {
                     }else if (brickType[i] == 3 && batstatus>0){
                         batstatus--;
                         score -= 10;
+                    }else if (brickType[i] == 4 && lives<4){
+                        lives++;
                     }
-
+                    buffActive[i] = false;
                 }
             }
 
@@ -429,6 +458,7 @@ public class HitStone extends GameEngine {
         gameTimer = new GameTimer();
         //gameTimer.start();
         score = 0;
+        lives = 2;
         backgroundMusic = new SoundPlayer("src/main/resources/background_music.wav");
         backgroundMusic.play();
     }
@@ -483,7 +513,7 @@ public class HitStone extends GameEngine {
         }
         // 用户按下 'R' 键重启游戏
         if (e.getKeyCode() == KeyEvent.VK_R) {
-            backgroundMusic.stop(); // 停止当前背景音乐
+            backgroundMusic.pause(); // 停止当前背景音乐
             init();
             gameState = GameState.RUNNING;
             gameTimer.start();
@@ -493,22 +523,26 @@ public class HitStone extends GameEngine {
     }
 
     private void showGameStatus(String status) {
-        if (!statusWindowVisible) { // 检查状态窗口是否已经可见
-            statusWindowVisible = true; // 将状态设置为窗口已显示
+        if (!statusWindowVisible) {
+            statusWindowVisible = true;
             new GameStatusWindow(status, new GameStatusWindow.GameStatusCallback() {
                 @Override
                 public void onOKClicked() {
-                    // 关闭游戏状态窗口后继续游戏
                     if (gameState == GameState.PAUSED) {
                         gameState = GameState.RUNNING;
-                        gameTimer.start(); // 重新启动计时器
-                        backgroundMusic.resume(); // 恢复背景音乐
+                        gameTimer.start();
+                        backgroundMusic.resume();
+
                     }
-                    statusWindowVisible = false; // 将状态设置为窗口已关闭
+                    if (gameover) { // 如果游戏结束，重新初始化
+                        init();
+                    }
+                    statusWindowVisible = false;
                 }
             });
         }
     }
+
 
     public void keyReleased(KeyEvent e) {
         // 用户释放左箭头或右箭头
